@@ -104,6 +104,11 @@ public abstract class SelectionTool<T>( MeshTool tool ) : SelectionTool where T 
 {
 	protected MeshTool Tool { get; private init; } = tool;
 
+	/// <summary>
+	/// Stores the previous selection for each tool type so that re-entering the tool restores it.
+	/// </summary>
+	private static readonly Dictionary<Type, SelectionSystem> _previousSelections = [];
+
 	readonly HashSet<MeshVertex> _vertexSelection = [];
 	readonly Dictionary<MeshVertex, Vector3> _transformVertices = [];
 	List<MeshFace> _transformFaces;
@@ -180,9 +185,43 @@ public abstract class SelectionTool<T>( MeshTool tool ) : SelectionTool where T 
 		SceneEditorSession.Active.UndoSystem.OnUndo += ( _ ) => OnMeshSelectionChanged();
 		SceneEditorSession.Active.UndoSystem.OnRedo += ( _ ) => OnMeshSelectionChanged();
 
+		RestorePreviousSelection();
 		SelectElements();
 		CalculateSelectionVertices();
 		OnMeshSelectionChanged();
+	}
+
+	public override void OnDisabled()
+	{
+		SaveCurrentSelection();
+	}
+
+	/// <summary>
+	/// Saves the current selection so it can be restored when re-entering this tool.
+	/// </summary>
+	private void SaveCurrentSelection()
+	{
+		var stored = _previousSelections.GetOrCreate( GetType() );
+		stored.Clear();
+
+		foreach ( var element in Selection.OfType<T>().Where( x => x.IsValid() ) )
+		{
+			stored.Add( element );
+		}
+	}
+
+	/// <summary>
+	/// Restores the previous selection if available.
+	/// </summary>
+	private void RestorePreviousSelection()
+	{
+		if ( !_previousSelections.TryGetValue( GetType(), out var previousSelection ) )
+			return;
+
+		foreach ( var element in previousSelection.OfType<T>().Where( x => x.IsValid() ) )
+		{
+			Selection.Add( element );
+		}
 	}
 
 	public bool IsAllowedToSelect => Tool?.MoveMode?.AllowSceneSelection ?? true;
