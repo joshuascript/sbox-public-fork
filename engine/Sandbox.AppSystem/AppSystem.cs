@@ -227,9 +227,7 @@ public class AppSystem
 		commandLine ??= System.Environment.CommandLine;
 		commandLine = commandLine.Replace( ".dll", ".exe" ); // uck
 
-		if ( OperatingSystem.IsWindows() ) _appSystem = CMaterialSystem2AppSystemDict.Create( createInfo.ToMaterialSystem2AppSystemDictCreateInfo() );
-		else _appSystem = CreateAppSystemWithInteropWorkaround( createInfo );
-
+		_appSystem = CMaterialSystem2AppSystemDict.Create( createInfo.ToMaterialSystem2AppSystemDictCreateInfo() );
 
 		if ( createInfo.Flags.HasFlag( AppSystemFlags.IsEditor ) )
 		{
@@ -295,35 +293,6 @@ public class AppSystem
 		if ( !NativeLibrary.TryLoad( dllName, out steamApiDll ) )
 		{
 			throw new System.Exception( "Couldn't load bin/win64/steam_api64.dll" );
-		}
-	}
-
-	// Linux interop workaround
-	// Fixes some sort of SIGSEGV bug when assigning CMaterial CreateInfo structs. That's all I know.
-	// This is GPT generated.
-	internal static CMaterialSystem2AppSystemDict CreateAppSystemWithInteropWorkaround(AppSystemCreateInfo createInfo)
-	{
-		var ci = createInfo.ToMaterialSystem2AppSystemDictCreateInfo();
-		var size = Marshal.SizeOf<NativeEngine.MaterialSystem2AppSystemDictCreateInfo>();
-
-		IntPtr pCI = Marshal.AllocHGlobal( size );
-
-		try
-		{
-			Marshal.StructureToPtr( ci, pCI, false );
-
-			unsafe
-			{
-				return new CMaterialSystem2AppSystemDict(
-					CMaterialSystem2AppSystemDict.__N.CMtrlSystm2ppSys_Create(
-						(NativeEngine.MaterialSystem2AppSystemDictCreateInfo*)pCI
-					)
-				);
-			}
-		}
-		finally
-		{
-			Marshal.FreeHGlobal( pCI );
 		}
 	}
 }
