@@ -227,8 +227,9 @@ public class AppSystem
 		commandLine ??= System.Environment.CommandLine;
 		commandLine = commandLine.Replace( ".dll", ".exe" ); // uck
 
-		if ( OperatingSystem.IsWindows() ) _appSystem = CMaterialSystem2AppSystemDict.Create( createInfo.ToMaterialSystem2AppSystemDictCreateInfo() );
-		else _appSystem = CreateAppSystemWithInteropWorkaround( createInfo );
+		_appSystem = OperatingSystem.IsWindows()
+			? CMaterialSystem2AppSystemDict.Create( createInfo.ToMaterialSystem2AppSystemDictCreateInfo() )
+			: CreateAppSystemWithInteropWorkaround( createInfo );
 
 		if ( createInfo.Flags.HasFlag( AppSystemFlags.IsEditor ) )
 		{
