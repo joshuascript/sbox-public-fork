@@ -516,7 +516,11 @@ public partial class Document
 		/// </summary>
 		private (float width, float height) GetMaterialWorldScale()
 		{
-			var material = Material.Load( Session?.Settings.ReferenceMaterial );
+			var materialName = Session?.Settings?.ReferenceMaterial;
+			if ( string.IsNullOrEmpty( materialName ) )
+				return (512.0f, 512.0f);
+
+			var material = Material.Load( materialName );
 			if ( material == null )
 				return (512.0f, 512.0f);
 
